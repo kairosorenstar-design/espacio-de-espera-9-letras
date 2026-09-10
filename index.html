@@ -224,14 +224,6 @@
   <div id="grid"></div>
   <div id="logo">9 LETRAS</div>
 
-  <div id="adblock-overlay">
-    <div class="box">
-      <h2>Bloqueador de anuncios detectado</h2>
-      <p>Para poder seguir jugando gratis necesitamos que desactives el bloqueador de anuncios en este sitio y vuelvas a intentarlo.</p>
-      <button onclick="location.reload()">Ya lo desactivé, reintentar</button>
-    </div>
-  </div>
-
   <main>
     <header>
       <h1>Formando Palabras · 9 Letras</h1>
@@ -279,7 +271,6 @@
   const progressEl = document.getElementById('progressCircle');
   const statusEl = document.getElementById('status-text');
   const btn = document.getElementById('return-btn');
-  const adblockOverlay = document.getElementById('adblock-overlay');
 
   const RADIUS = 52;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -319,7 +310,7 @@
     window.location.href = GAME_URL;
   });
 
-  // ---- Detección básica de bloqueador de anuncios ----
+  // ---- Detección básica de bloqueador de anuncios (ya NO congela el contador) ----
   function detectAdBlock(callback){
     const bait = document.createElement('div');
     bait.className = 'adsbox ad-banner adsbygoogle';
@@ -332,12 +323,13 @@
     }, 200);
   }
 
+  // El contador SIEMPRE arranca. Si detecta bloqueador, solo muestra un aviso
+  // pequeño y no bloqueante (no impide ver el botón ni volver al juego).
+  startCountdown();
+
   detectAdBlock((blocked) => {
     if (blocked){
-      paused = true;
-      adblockOverlay.classList.add('show');
-    } else {
-      startCountdown();
+      statusEl.textContent = "Parece que tienes un bloqueador de anuncios activo";
     }
   });
 
