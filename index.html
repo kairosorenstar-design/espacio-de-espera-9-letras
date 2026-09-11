@@ -252,6 +252,14 @@
   <div id="grid"></div>
   <div id="logo">9 LETRAS</div>
 
+  <div id="adblock-overlay">
+    <div class="box">
+      <h2>Bloqueador de anuncios detectado</h2>
+      <p>Para poder seguir jugando gratis necesitamos que desactives el bloqueador de anuncios en este sitio y vuelvas a intentarlo.</p>
+      <button onclick="location.reload()">Ya lo desactivé, reintentar</button>
+    </div>
+  </div>
+
   <main>
     <header>
       <h1>Formando Palabras · 9 Letras</h1>
@@ -299,6 +307,7 @@
   const progressEl = document.getElementById('progressCircle');
   const statusEl = document.getElementById('status-text');
   const btn = document.getElementById('return-btn');
+  const adblockOverlay = document.getElementById('adblock-overlay');
 
   const RADIUS = 52;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -338,26 +347,35 @@
     window.location.href = GAME_URL;
   });
 
-  // ---- Detección básica de bloqueador de anuncios (ya NO congela el contador) ----
+  // ---- Detección de bloqueador de anuncios (con doble verificación) ----
   function detectAdBlock(callback){
-    const bait = document.createElement('div');
-    bait.className = 'adsbox ad-banner adsbygoogle';
-    bait.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;';
-    document.body.appendChild(bait);
-    window.setTimeout(() => {
-      const blocked = bait.offsetParent === null || bait.clientHeight === 0;
-      bait.remove();
-      callback(blocked);
-    }, 200);
+    function checkOnce(done){
+      const bait = document.createElement('div');
+      bait.className = 'adsbox ad-banner adsbygoogle';
+      bait.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;';
+      document.body.appendChild(bait);
+      window.setTimeout(() => {
+        const blocked = bait.offsetParent === null
+          || bait.clientHeight === 0
+          || getComputedStyle(bait).display === 'none';
+        bait.remove();
+        done(blocked);
+      }, 250);
+    }
+    // Se verifica dos veces seguidas; solo se considera bloqueado si
+    // ambas pruebas coinciden, para reducir falsos positivos.
+    checkOnce((firstResult) => {
+      if (!firstResult){ callback(false); return; }
+      checkOnce((secondResult) => callback(firstResult && secondResult));
+    });
   }
-
-  // El contador SIEMPRE arranca. Si detecta bloqueador, solo muestra un aviso
-  // pequeño y no bloqueante (no impide ver el botón ni volver al juego).
-  startCountdown();
 
   detectAdBlock((blocked) => {
     if (blocked){
-      statusEl.textContent = "Parece que tienes un bloqueador de anuncios activo";
+      paused = true;
+      adblockOverlay.classList.add('show');
+    } else {
+      startCountdown();
     }
   });
 
